@@ -1,2 +1,5 @@
+# avoid sharing vscode configs -- conflicts ahoy!
+.vscode
+
 *.csv
 data/*
