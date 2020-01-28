@@ -9,55 +9,53 @@ import glob
 
 import argparse
 
-slic = SlicAvx2(num_components=1000, compactness=10)
+slic = SlicAvx2(num_components=400, compactness=10)
 
 def build_slic_img(cluster_map: ndarray, clusters):
     out = np.zeros(cluster_map.shape + (3,), dtype=np.uint8)
     for idx in np.ndindex(*cluster_map.shape):
         clus_idx = cluster_map[idx]
-        out[idx] = clusters[clus_idx]['color']
+        rgb = clusters[clus_idx]['color']
+        out[idx] = rgb
     return out
 
 
 
 IMAGE_FOLDER = "data/supplementary/test/images"
 
+DEBUG_IMG = False  # whether to debug (show original and segmented image)
+
 if __name__ == "__main__":
 
     img = cv2.imread(glob.glob(IMAGE_FOLDER+"/*.jpg")[0])
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-    plt.figure(figsize=(6, 8))
-    plt.subplot(211)
-    plt.imshow(img)
-    plt.title("Original image")
 
     cluster_map = slic.iterate(img, max_iter=10)
 
     segm_ = mark_boundaries(img, cluster_map) * 255
     segm_ = segm_.astype(np.uint8)
 
-    plt.subplot(212)
-    plt.imshow(segm_)
-    plt.title("Image with superpixel segments")
+    if DEBUG_IMG:
+        plt.figure(figsize=(6, 8))
+        plt.subplot(211)
+        plt.imshow(img)
+        plt.title("Original image")
 
-    plt.tight_layout()
+        plt.subplot(212)
+        plt.imshow(segm_)
+        plt.title("Image with superpixel segments")
 
+        plt.tight_layout()
 
-
-
-
-    # cv2.waitKey()
 
     slic_img = build_slic_img(cluster_map, slic.slic_model.clusters)
-    slic_img = cv2.cvtColor(slic_img, cv2.COLOR_Lab2RGB)
+    slic_img = cv2.cvtColor(slic_img, cv2.COLOR_RGB2BGR)
+    
+    # slic_img_segm = mark_boundaries(slic_img, cluster_map) * 255
+    # slic_img_segm = slic_img.astype(np.uint8)
 
     plt.figure()
     plt.imshow(slic_img)
     plt.show()
-
-    # cv2.imshow('image', slic_img, )
-    # cv2.waitKey()
-    # cv2.destroyAllWindows()
 
 
