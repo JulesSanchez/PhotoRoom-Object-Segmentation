@@ -4,6 +4,8 @@ import numpy as np
 from numpy import ndarray
 import cv2
 from skimage.segmentation import mark_boundaries
+from skimage import color
+
 import matplotlib.pyplot as plt
 import glob
 
@@ -11,19 +13,10 @@ import argparse
 
 slic = SlicAvx2(num_components=400, compactness=10)
 
-def build_slic_img(cluster_map: ndarray, clusters):
-    out = np.zeros(cluster_map.shape + (3,), dtype=np.uint8)
-    for idx in np.ndindex(*cluster_map.shape):
-        clus_idx = cluster_map[idx]
-        rgb = clusters[clus_idx]['color']
-        out[idx] = rgb
-    return out
 
+IMAGE_FOLDER = "data/test/images"
 
-
-IMAGE_FOLDER = "data/supplementary/test/images"
-
-DEBUG_IMG = False  # whether to debug (show original and segmented image)
+DEBUG_IMG = True  # whether to debug (show original and segmented image)
 
 if __name__ == "__main__":
 
@@ -48,14 +41,15 @@ if __name__ == "__main__":
         plt.tight_layout()
 
 
-    slic_img = build_slic_img(cluster_map, slic.slic_model.clusters)
-    slic_img = cv2.cvtColor(slic_img, cv2.COLOR_RGB2BGR)
+    slic_img = color.label2rgb(cluster_map, img, kind='avg')
     
     # slic_img_segm = mark_boundaries(slic_img, cluster_map) * 255
     # slic_img_segm = slic_img.astype(np.uint8)
 
-    plt.figure()
-    plt.imshow(slic_img)
-    plt.show()
+    if DEBUG_IMG:    
+        plt.figure()
+        plt.imshow(slic_img)
+        plt.tight_layout()
+        plt.show()
 
 
