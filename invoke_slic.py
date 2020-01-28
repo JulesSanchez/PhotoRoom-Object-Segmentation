@@ -16,11 +16,26 @@ slic = SlicAvx2(num_components=400, compactness=10)
 
 IMAGE_FOLDER = "data/test/images"
 
-DEBUG_IMG = True  # whether to debug (show original and segmented image)
+
+parser = argparse.ArgumentParser(description='Preprocess images to superpixels using SLIC.')
+
+parser.add_argument('--debug-img', action='store_true')
+parser.add_argument('--data', default=IMAGE_FOLDER, help="Folder of images to preprocess.")
+
 
 if __name__ == "__main__":
+    import os
+    
+    args = parser.parse_args()
+    data_folder = args.data
+    print("Processing Data folder %s" % data_folder)
+    if args.debug_img:
+        print("Debugging mode on.")
+    images = glob.glob(os.path.join(data_folder, '*.jpg'))
 
-    img = cv2.imread(glob.glob(IMAGE_FOLDER+"/*.jpg")[0])
+    DEBUG_IMG = args.debug_img
+
+    img = cv2.imread(images[0])
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     cluster_map = slic.iterate(img, max_iter=10)
