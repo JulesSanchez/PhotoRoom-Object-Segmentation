@@ -1,5 +1,8 @@
 # avoid sharing vscode configs -- conflicts ahoy!
 .vscode
 
+.ipynb_checkpoints
+
 *.csv
 data/*
+*.pyc

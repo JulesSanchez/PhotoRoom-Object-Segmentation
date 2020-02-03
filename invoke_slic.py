@@ -14,7 +14,8 @@ import argparse
 slic = SlicAvx2(num_components=400, compactness=10)
 
 
-IMAGE_FOLDER = "data/test/images"
+IMAGE_FOLDER = "data/train/images"
+MASKS_FOLDER = "data/train/masks"
 
 
 parser = argparse.ArgumentParser(description='Preprocess images to superpixels using SLIC.')
