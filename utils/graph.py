@@ -25,6 +25,16 @@ def get_slic_graph(slic, assignments):
     return nodes, neighbors
 
 
+def get_node_mask(mask, nodes):
+    out = np.empty((len(nodes),), dtype=int)
+    for i, n in enumerate(nodes):
+        y, x = n['yx']
+        y = int(y)
+        x = int(x)
+        out[i] = mask[y, x, 0] > 0
+    return out
+
+
 def fill_from_assignments(assignments, data):
     """Build an image using the cluster data and assignment matrix."""
     return data[assignments]
@@ -97,3 +107,6 @@ def get_laplacian(nodes, neighbors, data=None, weighted=True):
         get_laplacian_node(nodes, neighbors, i, data, weighted)
         for i in range(len(nodes))
     ])
+
+
+
