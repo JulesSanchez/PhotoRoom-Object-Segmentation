@@ -1,6 +1,17 @@
 import numpy as np
 import copy
+import torchvision.models as models
+import torch
+from torch import nn
+import cv2
+from torchvision import transforms, datasets
 
+data_transform = transforms.Compose([
+        transforms.Resize((224,224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
+    ])
 
 def get_slic_graph(slic, assignments):
     """Recover nodes and neighbors from SLIC assignment.
@@ -97,3 +108,13 @@ def get_laplacian(nodes, neighbors, data=None, weighted=True):
         get_laplacian_node(nodes, neighbors, i, data, weighted)
         for i in range(len(nodes))
     ])
+
+def get_vgg_features(img):
+    """extract global vgg features from input img."""
+    dataset_loader = iter(torch.utils.data.DataLoader(np.array([np.transpose(img,axes=[2,0,1]).astype(float)/255]),batch_size=1))
+    vgg13 = models.vgg13(pretrained=True)
+    vgg13_conv = nn.Sequential(*list(vgg13.children())[:-1]).double()
+    for param in vgg13_conv.parameters():
+        param.requires_grad = False
+    out = vgg13_conv(next(dataset_loader))
+    return np.mean(out.numpy()[0],axis=(1,2))
