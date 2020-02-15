@@ -6,3 +6,6 @@
 *.csv
 data/*
 *.pyc
+
+logs/*
+models/*
