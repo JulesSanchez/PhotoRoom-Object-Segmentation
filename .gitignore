@@ -8,4 +8,5 @@ data/*
 *.pyc
 
 logs/*
-models/*
+# model checkpoints
+models/
