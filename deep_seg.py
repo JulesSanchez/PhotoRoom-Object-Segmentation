@@ -92,7 +92,7 @@ def train(model, train_loader, val_loader, optimizer, epoch, logger, keep_id=Non
         for k in range(len(output)):
             dice_scores.append(dice_score(output[k],target[k]))
     logger.info('Val dice score : {}'.format(np.mean(dice_scores)))
-    return tot_loss
+    return tot_loss, np.mean(dice_scores)
 
 if __name__=="__main__":
 
@@ -108,13 +108,17 @@ if __name__=="__main__":
 
     if TRAIN:
         model.cuda()
-        train_dataload = DataLoaderSegmentation("data/train",3,TRAIN_NAME)
-        val_dataload = DataLoaderSegmentation("data/train",3,VAL_NAME,False)
+        train_dataload = DataLoaderSegmentation("data/train",16,TRAIN_NAME)
+        val_dataload = DataLoaderSegmentation("data/train",16,VAL_NAME,False)
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
         epochs = 10
+        best_val = 0
         for ep in range(epochs):
-            train(model, train_dataload, val_dataload, optimizer, ep+1, logger, keep_id=None)
-            torch.save(model.state_dict(),'models/model_duc.pth')
+            _, val = train(model, train_dataload, val_dataload, optimizer, ep+1, logger, keep_id=None)
+            if val > best_val :
+                torch.save(model.state_dict(),'models/model_duc.pth')
+                best_val = val
+                logging.info("Model saved at epochs {}".format(ep))
 
     if VAL:
         model.load_state_dict(torch.load('models/model_duc.pth'))
