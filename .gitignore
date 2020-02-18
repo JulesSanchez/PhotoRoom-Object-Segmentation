@@ -3,8 +3,9 @@
 
 .ipynb_checkpoints
 
-*.csv
-data/*
+*submission.csv
+data/train/*
+data/test/*
 *.pyc
 
 logs/*

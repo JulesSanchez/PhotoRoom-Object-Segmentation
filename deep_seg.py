@@ -8,9 +8,14 @@ import torch.nn.functional as F
 import torch.nn as nn
 import matplotlib.pyplot as plt 
 from skimage.transform import resize 
+import pandas as pd
+from utils.metrics import dice_score
 TRAIN = False
 VAL = False
 RUN_ON_TEST = True
+TRAIN_NAME = 'train_ids_duc.csv'
+VAL_NAME = 'val_ids_duc.csv'
+PATH = 'data/train'
 
 class CrossEntropyLoss2d(nn.Module):
     def __init__(self, weight=None, size_average=True, ignore_index=255):
@@ -21,20 +26,22 @@ class CrossEntropyLoss2d(nn.Module):
         return self.nll_loss(F.log_softmax(inputs), targets)
 
 class DataLoaderSegmentation(data.Dataset):
-    def __init__(self, folder_path, batch_size):
+    def __init__(self, folder_path, batch_size, csv_name,data_augment=False):
         super(DataLoaderSegmentation, self).__init__()
-        self.img_files = glob.glob(os.path.join(folder_path,'images','*.jpg'))
+        self.img_files = list(pd.read_csv(csv_name)['img'])
+        self.img_files = [os.path.join(folder_path,'images',os.path.basename(img_path) + '.jpg') for img_path in self.img_files]
         self.mask_files = []
-        self.data_transform = transforms.Compose([
-        transforms.Resize((224,224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                             std=[0.229, 0.224, 0.225])
-        ])
-        self.mask_transform = transforms.Compose([
-        transforms.Resize((224,224)),
-        transforms.ToTensor(),
-        ])
+        if not data_augment:
+            self.data_transform = transforms.Compose([
+            transforms.Resize((224,224)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                std=[0.229, 0.224, 0.225])
+            ])
+            self.mask_transform = transforms.Compose([
+            transforms.Resize((224,224)),
+            transforms.ToTensor(),
+            ])
         for img_path in self.img_files:
              self.mask_files.append(os.path.join(folder_path,'masks',os.path.basename(img_path)[:-4] + '.png') )
         self.batch_size = batch_size
@@ -53,7 +60,7 @@ class DataLoaderSegmentation(data.Dataset):
     def __len__(self):
         return self.N
 
-def train(model, train_loader, optimizer, epoch, logger, keep_id=None):
+def train(model, train_loader, val_loader, optimizer, epoch, logger, keep_id=None):
     model.train()
     tot_loss = 0
     count = 0
@@ -71,11 +78,20 @@ def train(model, train_loader, optimizer, epoch, logger, keep_id=None):
         optimizer.step()
         tot_loss += loss.item()
         count += data.size()[0]
-        if batch_idx % 5 == 0:
+        if batch_idx % 100 == 0:
             logger.info('Train Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
                 epoch, batch_idx, len(train_loader),
                 100. * batch_idx / len(train_loader), loss.item()))
     tot_loss /= count
+    dice_scores = []
+    for batch_idx, (data, target) in enumerate(val_loader):
+        data, target = data.cuda(), target.cuda()
+        output = model(data)
+        output = np.transpose(output.cpu().detach().numpy(),(0,2,3,1))
+        target = np.transpose(target.cpu().detach().numpy(),(0,2,3,1))
+        for k in range(len(output)):
+            dice_scores.append(dice_score(output[k],target[k]))
+    logger.info('Val dice score : {}'.format(np.mean(dice_scores)))
     return tot_loss
 
 if __name__=="__main__":
@@ -92,17 +108,18 @@ if __name__=="__main__":
 
     if TRAIN:
         model.cuda()
-        dataload = DataLoaderSegmentation("data/train",3)
+        train_dataload = DataLoaderSegmentation("data/train",3,TRAIN_NAME)
+        val_dataload = DataLoaderSegmentation("data/train",3,VAL_NAME,False)
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
         epochs = 10
         for ep in range(epochs):
-            train(model, dataload, optimizer, ep+1, logger, keep_id=None)
+            train(model, train_dataload, val_dataload, optimizer, ep+1, logger, keep_id=None)
             torch.save(model.state_dict(),'models/model_duc.pth')
 
     if VAL:
         model.load_state_dict(torch.load('models/model_duc.pth'))
         model.eval()
-        dataload = DataLoaderSegmentation("data/train",1)
+        val_dataload = DataLoaderSegmentation("data/train",1,VAL_NAME,False)
         for batch_idx, (data, target) in enumerate(dataload):
             data, target = data, target
             output = np.argmax(np.transpose(model(data).detach().numpy()[0],(1,2,0)),axis=-1)
@@ -115,7 +132,6 @@ if __name__=="__main__":
 
     if RUN_ON_TEST:
         from utils.loader import test_generator, rle_encode, rle_to_string, rle_decode
-        import pandas as pd
         df = pd.read_csv('data/sample_submission.csv')
         model.load_state_dict(torch.load('models/model_duc.pth'))
         model.eval()
