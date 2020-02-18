@@ -47,7 +47,7 @@ def get_subset_train(path='data',size=1000):
     indices = np.random.choice(len(list_of_ids),size=size,replace=False)
     list_of_ids = list_of_ids[indices,0]
     list_of_masks = list_of_masks[indices,1]
-    images = [ for i in range(size)]
+    images = [ i for i in range(size)]
     masks = [rle_decode(list_of_masks[i],images[i].shape[:2]) for i in range(size)]
     return images, masks
 
@@ -69,7 +69,8 @@ def train_generator(path='data'):
 def test_generator(path='data'):
     list_of_ids = pandas.read_csv(os.path.join(path,'test_ids.csv'),header=0).to_numpy()[:,0]
     i=0
-    while i <= len(list_of_ids):
+    while i < len(list_of_ids):
+        print(list_of_ids[i])
         yield cv2.imread(os.path.join(os.path.join(path,'test/images'),list_of_ids[i]) + '.jpg')
         i+=1
 
