@@ -14,5 +14,5 @@ df_train = pd.DataFrame({'img': train_names})
 df_val = pd.DataFrame({'img': val_names})
 
 
-df_val.to_csv(os.path.join('data/train',TRAIN_NAME), index=False)
-df_train.to_csv(os.path.join('data/train',VAL_NAME), index=False)
+df_train.to_csv(os.path.join('data/train',TRAIN_NAME), index=False)
+df_val.to_csv(os.path.join('data/train',VAL_NAME), index=False)

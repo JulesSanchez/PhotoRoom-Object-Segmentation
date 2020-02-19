@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 from skimage.transform import resize 
 import pandas as pd
 from utils.metrics import dice_score
-TRAIN = False
+TRAIN = True
 VAL = False
-RUN_ON_TEST = True
+RUN_ON_TEST = False
 TRAIN_NAME = 'train_ids_duc.csv'
 VAL_NAME = 'val_ids_duc.csv'
 PATH = 'data/train'
@@ -28,7 +28,7 @@ class CrossEntropyLoss2d(nn.Module):
 class DataLoaderSegmentation(data.Dataset):
     def __init__(self, folder_path, batch_size, csv_name,data_augment=False):
         super(DataLoaderSegmentation, self).__init__()
-        self.img_files = list(pd.read_csv(csv_name)['img'])
+        self.img_files = list(pd.read_csv(os.path.join(folder_path,csv_name))['img'])
         self.img_files = [os.path.join(folder_path,'images',os.path.basename(img_path) + '.jpg') for img_path in self.img_files]
         self.mask_files = []
         if not data_augment:
@@ -64,31 +64,31 @@ def train(model, train_loader, val_loader, optimizer, epoch, logger, keep_id=Non
     model.train()
     tot_loss = 0
     count = 0
-    criterion = CrossEntropyLoss2d(size_average=False).cuda()
-    for batch_idx, (data, target) in enumerate(train_loader):
-        data, target = data.cuda(), target.cuda()
-        optimizer.zero_grad()
-        output = model(data)
-        if keep_id is not None:
-            output = output[:, :, keep_id]
-            target = target[:, keep_id]
+    # criterion = CrossEntropyLoss2d(size_average=False).cuda()
+    # for batch_idx, (data, target) in enumerate(train_loader):
+    #     data, target = data.cuda(), target.cuda()
+    #     optimizer.zero_grad()
+    #     output = model(data)
+    #     if keep_id is not None:
+    #         output = output[:, :, keep_id]
+    #         target = target[:, keep_id]
 
-        loss = criterion(output, target)
-        loss.backward()
-        optimizer.step()
-        tot_loss += loss.item()
-        count += data.size()[0]
-        if batch_idx % 100 == 0:
-            logger.info('Train Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
-                epoch, batch_idx, len(train_loader),
-                100. * batch_idx / len(train_loader), loss.item()))
-    tot_loss /= count
+    #     loss = criterion(output, target)
+    #     loss.backward()
+    #     optimizer.step()
+    #     tot_loss += loss.item()
+    #     count += data.size()[0]
+    #     if batch_idx % 100 == 0:
+    #         logger.info('Train Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}'.format(
+    #             epoch, batch_idx, len(train_loader),
+    #             100. * batch_idx / len(train_loader), loss.item()))
+    # tot_loss /= count
     dice_scores = []
     for batch_idx, (data, target) in enumerate(val_loader):
         data, target = data.cuda(), target.cuda()
         output = model(data)
-        output = np.transpose(output.cpu().detach().numpy(),(0,2,3,1))
-        target = np.transpose(target.cpu().detach().numpy(),(0,2,3,1))
+        output = np.argmax(np.transpose(output.cpu().detach().numpy(),(0,2,3,1)),axis=-1)
+        target = target.cpu().detach().numpy()
         for k in range(len(output)):
             dice_scores.append(dice_score(output[k],target[k]))
     logger.info('Val dice score : {}'.format(np.mean(dice_scores)))
@@ -108,8 +108,8 @@ if __name__=="__main__":
 
     if TRAIN:
         model.cuda()
-        train_dataload = DataLoaderSegmentation("data/train",16,TRAIN_NAME)
-        val_dataload = DataLoaderSegmentation("data/train",16,VAL_NAME,False)
+        train_dataload = DataLoaderSegmentation("data/train",2,TRAIN_NAME)
+        val_dataload = DataLoaderSegmentation("data/train",2,VAL_NAME,False)
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
         epochs = 10
         best_val = 0
