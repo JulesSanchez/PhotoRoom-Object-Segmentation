@@ -6,3 +6,9 @@ Pour DUC HDC :
 creer un folder logs
 creer un folder models
 dans models : mettre resnet152-b121ed2d.pth (resnet152 pytorch)
+
+## Train-test split
+
+```bash
+python utils/create_val.py
+```

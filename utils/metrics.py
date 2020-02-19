@@ -41,3 +41,12 @@ def dice_score(im1, im2, empty_score=1.0):
 
 def score_sample(masks_proposed, mask_truth):
     return np.mean([dice_score(masks_proposed[i],mask_truth[i]) for i in range(len(mask_proposed))])
+
+
+class CrossEntropyLoss2d(nn.Module):
+    def __init__(self, weight=None, size_average=True, ignore_index=255):
+        super(CrossEntropyLoss2d, self).__init__()
+        self.nll_loss = nn.NLLLoss2d(weight, size_average, ignore_index)
+
+    def forward(self, inputs, targets):
+        return self.nll_loss(F.log_softmax(inputs), targets)

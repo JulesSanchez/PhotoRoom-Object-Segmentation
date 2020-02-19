@@ -6,7 +6,7 @@ TRAIN_NAME = 'train_ids_duc.csv'
 VAL_NAME = 'val_ids_duc.csv'
 VAL_SPLIT = 0.33
 
-list_names = list(pd.read_csv('/home/jules/Documents/PhotoRoom-Object-Segmentation/data/train_ids_clean.csv')['img'])
+list_names = list(pd.read_csv('data/train_ids_clean.csv')['img'])
 
 train_names, val_names = train_test_split(list_names,test_size=VAL_SPLIT)
 
