@@ -1,6 +1,6 @@
 import numpy as np
-
-
+import torch.nn as nn
+import torch.nn.functional as F
 # Source: https://gist.github.com/brunodoamaral/e130b4e97aa4ebc468225b7ce39b3137
 def dice_score(im1, im2, empty_score=1.0):
     """

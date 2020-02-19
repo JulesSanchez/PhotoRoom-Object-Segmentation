@@ -36,7 +36,7 @@ train_transform = Compose([
                                  contrast_limit=0.3, p=0.5),
     ], p=0.5),
     Normalize(),
-    ToTensor(),
+    ToTensor()
 ])
 
 val_transforms = Compose([
@@ -74,10 +74,10 @@ class DataLoaderSegmentation(data.Dataset):
                 augmented_ = self.transforms(
                     image=img, mask=mask)
                 img = augmented_['image']
-                mask = augmented_['mask']
+                mask = augmented_['mask'].long()
             imgs.append(img)
             masks.append(mask)
-        return torch.stack(imgs), torch.stack(masks)
+        return torch.stack(imgs), torch.stack(masks).view(-1,224,224)
 
     def __len__(self):
         return self.N
