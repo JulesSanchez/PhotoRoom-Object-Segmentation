@@ -111,6 +111,7 @@ if __name__=="__main__":
                 torch.save(model.state_dict(),'models/model_%s.pth'%args.model)
                 best_val = val
                 logger.info("Model saved at epochs {}".format(ep))
+            scheduler.step()
 
 
     if RUN_ON_TEST:
