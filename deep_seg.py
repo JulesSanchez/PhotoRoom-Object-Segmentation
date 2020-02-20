@@ -28,6 +28,7 @@ parser.add_argument("--model", default="unet", choices=list(MODEL_DICT.keys()))
 parser.add_argument("--model-args", nargs='+', type=int)
 parser.add_argument("--lr", '-lr', type=float, default=0.001)
 parser.add_argument("--epochs", '-E', default=10)
+parser.add_argument("--batch_size", '-B', default=2)
 
 args = parser.parse_args()
 
@@ -91,15 +92,17 @@ if __name__=="__main__":
 
     model = model_class(*model_args)
     print(model)
+    
+    BATCH_SIZE = args.batch_size
 
     if TRAIN:
         model.cuda()
-        train_dataload = DataLoaderSegmentation("data/train",2,TRAIN_NAME,
+        train_dataload = DataLoaderSegmentation("data/train", BATCH_SIZE, TRAIN_NAME,
                                                 transforms=train_transform)
-        val_dataload = DataLoaderSegmentation("data/train",2,VAL_NAME,
+        val_dataload = DataLoaderSegmentation("data/train", BATCH_SIZE, VAL_NAME,
                                               transforms=val_transforms)
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-        epochs = 10
+        epochs = args.epochs
         best_val = 0
         for ep in range(epochs):
             _, val = train(model, train_dataload, val_dataload, optimizer, ep+1, logger, keep_id=None)
