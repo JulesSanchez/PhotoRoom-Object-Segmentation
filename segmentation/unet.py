@@ -85,7 +85,7 @@ class UNet(nn.Module):
     
     See https://arxiv.org/pdf/1505.04597.pdf 
     """
-    def __init__(self, num_channels: int, num_classes: int = 2):
+    def __init__(self, num_channels: int = 3, num_classes: int = 2):
         """Initialize a U-Net.
         
         Parameters

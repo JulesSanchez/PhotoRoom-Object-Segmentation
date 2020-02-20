@@ -59,8 +59,7 @@ class DataLoaderSegmentation(data.Dataset):
             self.mask_files.append(os.path.join(
                 folder_path, 'masks', os.path.basename(img_path)[:-4] + '.png'))
         self.batch_size = batch_size
-        self.N = len(self.img_files)//batch_size + \
-            (len(self.img_files) % batch_size > 0)
+        self.N = len(self.img_files)//batch_size + (len(self.img_files) % batch_size > 0)
 
     def __getitem__(self, index):
         imgs = []

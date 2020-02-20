@@ -27,8 +27,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--model", default="unet", choices=list(MODEL_DICT.keys()))
 parser.add_argument("--model-args", nargs='+', type=int)
 parser.add_argument("--lr", '-lr', type=float, default=0.001)
-parser.add_argument("--epochs", '-E', default=10)
-parser.add_argument("--batch_size", '-B', default=2)
+parser.add_argument("--epochs", '-E', default=10, type=int)
+parser.add_argument("--batch_size", '-B', default=2, type=int)
 
 args = parser.parse_args()
 
@@ -91,7 +91,6 @@ if __name__=="__main__":
     model_args = args.model_args
 
     model = model_class(*model_args)
-    print(model)
     
     BATCH_SIZE = args.batch_size
 
