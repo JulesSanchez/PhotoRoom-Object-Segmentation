@@ -77,7 +77,7 @@ class DataLoaderSegmentation(data.Dataset):
                 mask = augmented_['mask'].long()
             imgs.append(img)
             masks.append(mask)
-        return torch.stack(imgs), torch.stack(masks).view(-1,224,224)
+        return torch.stack(imgs), torch.stack(masks).view(-1,*imgs[0].shape[1:])
 
     def __len__(self):
         return self.N
@@ -91,9 +91,10 @@ if __name__ == "__main__":
     img = imgs[0].numpy()
     img = np.transpose(img, axes=(1,2,0))
     img = img * np.array([0.229, 0.224, 0.225]) + np.array([0.485, 0.456, 0.406])
-    mask = masks[0].numpy()[0]
+    mask = masks[0].numpy()
     
     import matplotlib.pyplot as plt
+    fig = plt.figure(figsize=(9,4))
     plt.subplot(121)
     plt.imshow(img[...,::-1])
     plt.title("Image")
