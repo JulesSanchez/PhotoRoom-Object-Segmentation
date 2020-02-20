@@ -1,11 +1,11 @@
 """Unit tests to check if things work (e.g. loaders, model shapes...)."""
 
 from segmentation.unet import UNet, AttentionUNet
+from utils.data import DataLoaderSegmentation, train_transform, TRAIN_NAME
 
 def test_unet():
     net = UNet(3)
 
-    from utils.data import DataLoaderSegmentation, train_transform, TRAIN_NAME
 
     dataset = DataLoaderSegmentation("data/train", 2, TRAIN_NAME,
                                      transforms=train_transform)
@@ -23,8 +23,6 @@ def test_unet():
 
 def test_attunet():
     net = AttentionUNet(3)
-
-    from utils.data import DataLoaderSegmentation, train_transform, TRAIN_NAME
 
     dataset = DataLoaderSegmentation("data/train", 2, TRAIN_NAME,
                                      transforms=train_transform)
