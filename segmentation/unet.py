@@ -156,19 +156,26 @@ class AttentionGate(nn.Module):
         """
         super().__init__()
         self.gate_conv = nn.Conv2d(gate_channels, int_channels, kernel_size=1, bias=False)
-        self.gate_bn = nn.BatchNorm2d(gate_channels)
+        self.gate_bn = nn.BatchNorm2d(int_channels)
         self.feat_conv = nn.Conv2d(feat_channels, int_channels, kernel_size=1)
-        self.feat_bn = nn.BatchNorm2d(feat_channels)
+        self.feat_bn = nn.BatchNorm2d(int_channels)
         
-        self.alpha_conv = nn.Conv2d(feat_channels, 1, kernel_size=1)
+        self.alpha_conv = nn.Conv2d(int_channels, 1, kernel_size=1)
         self.alpha_activ = nn.Sigmoid()
         
-    def forward(self, gate_signal: Tensor, x: Tensor) -> Tensor:
-        img_shape = x.shape[2:]
-        import ipdb; ipdb.set_trace()
-        g = self.gate_bn(self.gate_conv(gate_signal))
+    def forward(self, g: Tensor, x: Tensor) -> Tensor:
+        """
+        Parameters
+        ----------
+        g
+            Gate signal (feature maps from downside block).
+        x
+            Skip connection weight.
+        """
+        img_shape = x.shape[-2:]
+        g = self.gate_bn(self.gate_conv(g))
         x = self.feat_bn(self.feat_conv(x))
-        z = gate_signal + x
+        z = g + x
         z = torch.relu(z)
         z = self.alpha_conv(z)
         alpha = self.alpha_activ(z)
@@ -200,7 +207,6 @@ class AttentionUNet(nn.Module):
 
         self.in_conv = ConvBlock(num_channels, 64)
 
-        # TODO add attention gates
         self.down1 = _DownBlock(64, 128)
         self.down2 = _DownBlock(128, 256)
         self.down3 = _DownBlock(256, 512)
@@ -211,25 +217,33 @@ class AttentionUNet(nn.Module):
         )
 
         # reminder: convolves then upsamples
+        self.att1 = AttentionGate(512, 512, 128)
         self.up1 = _UpBlock(512, 256)
+        self.att2 = AttentionGate(256, 256, 64)
         self.up2 = _UpBlock(256, 128)
+        self.att3 = AttentionGate(128, 128, 32)
         self.up3 = _UpBlock(128, 64)
 
         # binary classification
-        self.out_conv = ConvBlock(128, 64)
+        self.att4 = AttentionGate(64, 64, 16)
+        self.out_conv = ConvBlock(2 * 64, 64)
         self.labels_conv = nn.Conv2d(64, num_classes, 3, padding=1)
         self.activation = nn.Softmax(dim=0)
 
     def forward(self, x: Tensor):
-        x1 = self.in_conv(x)  # 64 * 1. * 1. ie 224
+        x1 = self.in_conv(x)  # 64 * 1. * 1.
         x2 = self.down1(x1)  # 128 * 1/2 * 1/2
         x3 = self.down2(x2)  # 256 * 1/4 * 1/4
         x4 = self.down3(x3)  # 512 * 1/8 * 1/8
-        x = self.center(x4)  # 512 * 1/8 * 1/8 ie 28
-        x = self.up1(x, x4)  # 256 * 1/4 * 1/4 56
-        x = self.up2(x, x3)  # 128 * 1/2 * 1/2 112
-        x = self.up3(x, x2)
-        z = torch.cat((x1, x), dim=1)
+        x = self.center(x4)  # 512 * 1/8 * 1/8
+        alp1 = self.att1(x4, x4)
+        x = self.up1(x, alp1 * x4)  # 256 * 1/4 * 1/4
+        alp2 = self.att2(x, x3)
+        x = self.up2(x, alp2 * x3)  # 128 * 1/2 * 1/2
+        alp3 = self.att3(x, x2)
+        x = self.up3(x, alp3 * x2)
+        alp4 = self.att4(x, x1)
+        z = torch.cat((alp4 * x1, x), dim=1)
         out = self.out_conv(z)
         labels = self.activation(self.labels_conv(out))
         return labels

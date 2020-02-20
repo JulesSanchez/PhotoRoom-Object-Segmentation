@@ -18,6 +18,7 @@ def test_unet():
 
     pred_mask = net(img)
     print(pred_mask)
+    print(pred_mask.shape)
 
 
 def test_attunet():
@@ -31,10 +32,13 @@ def test_attunet():
     # tensors, supposedly
     imgs, masks = dataset[5]
     img = imgs[0]
+    img = img.view(-1, *img.shape)
     print("img shape", img.shape)
     pred_mask = net(img)
     print(pred_mask)
+    print(pred_mask.shape)
 
 
 if __name__ == "__main__":
-    test_unet()
+    # test_unet()
+    test_attunet()
