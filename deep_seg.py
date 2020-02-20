@@ -11,9 +11,9 @@ from utils.metrics import dice_score, CrossEntropyLoss2d
 from utils.data import DataLoaderSegmentation, train_transform, val_transforms
 from utils.data import TRAIN_NAME, VAL_NAME, PATH
 
-TRAIN = True
+TRAIN = False
 VAL = False
-RUN_ON_TEST = False
+RUN_ON_TEST = True
 
 
 def train(model, train_loader, val_loader, optimizer, epoch, logger, keep_id=None):
@@ -87,7 +87,7 @@ if __name__=="__main__":
         test_gen = test_generator()
         encoded_strings = []
         for img in test_gen:
-            data = val_transforms(img)
+            data = val_transforms(image=img)['image']
             output = resize(np.argmax(np.transpose(model(torch.stack([data])).detach().numpy()[0],(1,2,0)),axis=-1),(720,1280),clip=False,preserve_range=True)
             output[output<0.5] = 0
             output[output>=0.5] = 1

@@ -9,7 +9,7 @@ from albumentations import Compose, Resize, RandomResizedCrop, HorizontalFlip, R
 from albumentations import OneOf, GaussNoise, GaussianBlur, RGBShift
 from albumentations import RandomBrightnessContrast, Normalize, Resize
 from albumentations.pytorch import ToTensor
-
+from sklearn.utils import shuffle
 
 TRAIN_NAME = 'train_ids_duc.csv'
 VAL_NAME = 'val_ids_duc.csv'
@@ -77,6 +77,8 @@ class DataLoaderSegmentation(data.Dataset):
                 mask = augmented_['mask'].long()
             imgs.append(img)
             masks.append(mask)
+        if index == (len(self) - 1):
+            self.img_files, self.mask_files = shuffle(self.img_files, self.mask_files)
         return torch.stack(imgs), torch.stack(masks).view(-1,*imgs[0].shape[1:])
 
     def __len__(self):

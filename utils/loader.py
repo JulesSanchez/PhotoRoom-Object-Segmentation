@@ -70,7 +70,6 @@ def test_generator(path='data'):
     list_of_ids = pandas.read_csv(os.path.join(path,'test_ids.csv'),header=0).to_numpy()[:,0]
     i=0
     while i < len(list_of_ids):
-        print(list_of_ids[i])
         yield cv2.imread(os.path.join(os.path.join(path,'test/images'),list_of_ids[i]) + '.jpg')
         i+=1
 
