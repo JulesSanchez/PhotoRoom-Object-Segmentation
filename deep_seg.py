@@ -61,13 +61,14 @@ def train(model, train_loader, val_loader, optimizer, epoch, logger, keep_id=Non
                 100. * batch_idx / len(train_loader), loss.item()))
     tot_loss /= count
     dice_scores = []
-    for batch_idx, (data, target) in enumerate(val_loader):
-        data, target = data.cuda(), target.cuda()
-        output = model(data)
-        output = np.argmax(np.transpose(output.cpu().detach().numpy(),(0,2,3,1)),axis=-1)
-        target = target.cpu().detach().numpy()
-        for k in range(len(output)):
-            dice_scores.append(dice_score(output[k],target[k]))
+    with torch.no_grad():
+        for batch_idx, (data, target) in enumerate(val_loader):
+            data, target = data.cuda(), target.cuda()
+            output = model(data)
+            output = np.argmax(np.transpose(output.cpu().detach().numpy(),(0,2,3,1)),axis=-1)
+            target = target.cpu().detach().numpy()
+            for k in range(len(output)):
+                dice_scores.append(dice_score(output[k],target[k]))
     logger.info('Val dice score : {}'.format(np.mean(dice_scores)))
     return tot_loss, np.mean(dice_scores)
 
@@ -101,6 +102,7 @@ if __name__=="__main__":
         val_dataload = DataLoaderSegmentation("data/train", BATCH_SIZE, VAL_NAME,
                                               transforms=val_transforms)
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+        scheduler = torch.optim.StepLR(optimizer, 3, 0.9)
         epochs = args.epochs
         best_val = 0
         for ep in range(epochs):
