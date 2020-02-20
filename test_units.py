@@ -5,7 +5,7 @@ from utils.data import DataLoaderSegmentation, train_transform, TRAIN_NAME
 
 def test_unet():
     net = UNet(3)
-
+    import ipdb; ipdb.set_trace()
 
     dataset = DataLoaderSegmentation("data/train", 2, TRAIN_NAME,
                                      transforms=train_transform)
@@ -38,5 +38,5 @@ def test_attunet():
 
 
 if __name__ == "__main__":
-    # test_unet()
-    test_attunet()
+    test_unet()
+    # test_attunet()
