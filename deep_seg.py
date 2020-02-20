@@ -100,7 +100,7 @@ if __name__=="__main__":
                                                 transforms=train_transform)
         val_dataload = DataLoaderSegmentation("data/train", BATCH_SIZE, VAL_NAME,
                                               transforms=val_transforms)
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
         epochs = args.epochs
         best_val = 0
         for ep in range(epochs):
