@@ -1,4 +1,5 @@
 from segmentation.duc_hdc import ResNetDUCHDC
+from segmentation.unet import UNet, AttentionUNet
 import cv2
 import glob, os, torch, logging
 import numpy as np
@@ -11,9 +12,28 @@ from utils.metrics import dice_score, CrossEntropyLoss2d
 from utils.data import DataLoaderSegmentation, train_transform, val_transforms
 from utils.data import TRAIN_NAME, VAL_NAME, PATH
 
+import argparse
+from typing import Union
+
+
+MODEL_DICT = {
+    "unet": UNet,
+    "duc": ResNetDUCHDC,
+    "attunet": AttentionUNet
+}
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--model", default="unet", choices=list(MODEL_DICT.keys()))
+parser.add_argument("--model-args", nargs='+', type=int)
+parser.add_argument("--lr", '-lr', type=float, default=0.001)
+parser.add_argument("--epochs", '-E', default=10)
+
+args = parser.parse_args()
+
 TRAIN = False
 VAL = False
-RUN_ON_TEST = True
+RUN_ON_TEST = False
 
 
 def train(model, train_loader, val_loader, optimizer, epoch, logger, keep_id=None):
@@ -50,17 +70,27 @@ def train(model, train_loader, val_loader, optimizer, epoch, logger, keep_id=Non
     logger.info('Val dice score : {}'.format(np.mean(dice_scores)))
     return tot_loss, np.mean(dice_scores)
 
+
+
 if __name__=="__main__":
+
+    print(args)
+    os.makedirs("logs", exist_ok=True)
 
     logger = logging.getLogger("train")
     logger.setLevel(logging.DEBUG)
     logger.handlers = []
     ch = logging.StreamHandler()
     logger.addHandler(ch)
+    import os
     fh = logging.FileHandler(os.path.join("logs", "log.txt"))
     logger.addHandler(fh)
+    
+    model_class = MODEL_DICT[args.model]
+    model_args = args.model_args
 
-    model = ResNetDUCHDC(2)
+    model = model_class(*model_args)
+    print(model)
 
     if TRAIN:
         model.cuda()
