@@ -106,15 +106,15 @@ if __name__=="__main__":
         for ep in range(epochs):
             _, val = train(model, train_dataload, val_dataload, optimizer, ep+1, logger, keep_id=None)
             if val > best_val :
-                torch.save(model.state_dict(),'models/model_duc.pth')
+                torch.save(model.state_dict(),'models/model_%s.pth'%args.model)
                 best_val = val
-                logging.info("Model saved at epochs {}".format(ep))
+                logger.info("Model saved at epochs {}".format(ep))
 
 
     if RUN_ON_TEST:
         from utils.loader import test_generator, rle_encode, rle_to_string, rle_decode
         df = pd.read_csv('data/sample_submission.csv')
-        model.load_state_dict(torch.load('models/model_duc.pth'))
+        model.load_state_dict(torch.load('models/model_%s.pth'%args.model))
         model.eval()
         test_gen = test_generator()
         encoded_strings = []
