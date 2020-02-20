@@ -102,7 +102,7 @@ if __name__=="__main__":
         val_dataload = DataLoaderSegmentation("data/train", BATCH_SIZE, VAL_NAME,
                                               transforms=val_transforms)
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-        scheduler = torch.optim.StepLR(optimizer, 3, 0.9)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 3, 0.9)
         epochs = args.epochs
         best_val = 0
         for ep in range(epochs):
