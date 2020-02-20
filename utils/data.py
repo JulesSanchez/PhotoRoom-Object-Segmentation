@@ -29,7 +29,7 @@ train_transform = Compose([
         GaussianBlur(p=0.5)
     ], p=0.4),
     HorizontalFlip(p=0.5),
-    Rotate(30, p=0.9),
+    Rotate(15, p=0.9),
     OneOf([
         RGBShift(p=0.5),
         RandomBrightnessContrast(brightness_limit=0.4,
