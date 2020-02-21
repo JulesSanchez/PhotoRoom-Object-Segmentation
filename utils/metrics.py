@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 # Source: https://gist.github.com/brunodoamaral/e130b4e97aa4ebc468225b7ce39b3137
@@ -47,6 +48,19 @@ class CrossEntropyLoss2d(nn.Module):
     def __init__(self, weight=None, size_average=True, ignore_index=255):
         super(CrossEntropyLoss2d, self).__init__()
         self.nll_loss = nn.NLLLoss2d(weight, size_average, ignore_index)
-
     def forward(self, inputs, targets):
         return self.nll_loss(F.log_softmax(inputs), targets)
+
+class KLLoss(nn.Module):
+    def __init__(self):
+        super(KLLoss,self).__init__()
+
+    def forward(self,shape, z_mean, z_var):
+        n = shape[0]*shape[1]*shape[2]
+        return torch.mean((1 / n) * torch.sum(torch.exp(z_var) + torch.pow(z_mean,2) - 1. - z_var, axis=-1))
+
+class L2VAELoss(nn.Module):
+    def __init__(self):
+        super(L2VAELoss,self).__init__()
+    def forward(self, inputs, targets):
+        return torch.mean(torch.mean(torch.pow(targets - inputs,2), axis=(1, 2, 3)))
