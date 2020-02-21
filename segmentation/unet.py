@@ -191,7 +191,7 @@ class AttentionUNet(nn.Module):
     and original implementation at https://github.com/ozan-oktay/Attention-Gated-Networks.
     """
     
-    def __init__(self, num_channels: int, num_classes: int = 2):
+    def __init__(self, num_channels: int = 3, num_classes: int = 2):
         """
         
         Parameters
