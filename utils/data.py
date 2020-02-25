@@ -83,6 +83,29 @@ class DataLoaderSegmentation(data.Dataset):
     def __len__(self):
         return self.N
 
+
+def plot_prediction(img: torch.Tensor, pred_mask: torch.Tensor, target: torch.Tensor):
+    img = np.transpose(img.data.cpu().numpy(), axes=(1,2,0))
+    img = img * np.array([0.229, 0.224, 0.225]) + np.array([0.485, 0.456, 0.406])
+
+    pred_mask = pred_mask.data.cpu().numpy()
+    target = target.data.cpu().numpy()
+
+    import matplotlib.pyplot as plt
+    from typing import List
+    fig, axes = plt.subplots(1, 3, figsize=(13, 4), dpi=50)
+    axes: List[plt.Axes]
+    axes[0].imshow(img)
+    axes[0].set_title("Original image")
+    
+    axes[1].imshow(pred_mask)
+    axes[1].set_title("Predicted probabilities")
+    
+    axes[2].imshow(target)
+    axes[2].set_title("Target mask")
+    return fig
+
+
 if __name__ == "__main__":
     train_dataset = DataLoaderSegmentation('data/train', 2, TRAIN_NAME,
                                            transforms=train_transform)
