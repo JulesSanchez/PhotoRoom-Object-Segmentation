@@ -1,3 +1,4 @@
+from torch.utils.tensorboard import SummaryWriter
 from segmentation.duc_hdc import ResNetDUCHDC
 from segmentation.unet import UNet, AttentionUNet
 import cv2
@@ -8,9 +9,10 @@ import torch.nn as nn
 import matplotlib.pyplot as plt 
 from skimage.transform import resize 
 import pandas as pd
+from utils import metrics
 from utils.metrics import dice_score, CrossEntropyLoss2d
 from utils.data import DataLoaderSegmentation, train_transform, val_transforms
-from utils.data import TRAIN_NAME, VAL_NAME, PATH
+from utils.data import TRAIN_NAME, VAL_NAME, PATH, plot_prediction
 
 import argparse
 from typing import Union
@@ -22,10 +24,17 @@ MODEL_DICT = {
     "attunet": AttentionUNet
 }
 
+LOSS_DICT = {
+    "crossentropy": CrossEntropyLoss2d(size_average=False),
+    "dice": metrics.soft_dice_loss,
+    "combined": metrics.CombinedLoss()
+}
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--model", default="unet", choices=list(MODEL_DICT.keys()))
 parser.add_argument("--model-args", nargs='+', type=int)
+parser.add_argument("--loss", type=str, default="crossentropy", choices=list(LOSS_DICT.keys()))
 parser.add_argument("--lr", '-lr', type=float, default=0.001)
 parser.add_argument("--epochs", '-E', default=10, type=int)
 parser.add_argument("--batch_size", '-B', default=2, type=int)
@@ -37,11 +46,10 @@ VAL = False
 RUN_ON_TEST = False
 
 
-def train(model, train_loader, val_loader, optimizer, epoch, logger, keep_id=None):
+def train(model, train_loader, val_loader, criterion, optimizer, epoch, logger, writer: SummaryWriter=writer, keep_id=None):
     model.train()
     tot_loss = 0
     count = 0
-    criterion = CrossEntropyLoss2d(size_average=False).cuda()
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.cuda(), target.cuda()
         optimizer.zero_grad()
@@ -70,6 +78,12 @@ def train(model, train_loader, val_loader, optimizer, epoch, logger, keep_id=Non
             for k in range(len(output)):
                 dice_scores.append(dice_score(output[k],target[k]))
     logger.info('Val dice score : {}'.format(np.mean(dice_scores)))
+    
+    if epoch == 1:
+        writer.add_graph(model, data)
+    
+    fig = plot_prediction(data, output, target)
+    writer.add_figure("Train/Prediction", fig, global_step=epoch)
     return tot_loss, np.mean(dice_scores)
 
 
@@ -92,10 +106,18 @@ if __name__=="__main__":
     model_args = args.model_args
 
     model = model_class(*model_args)
+
+    criterion = LOSS_DICT[args.loss]
+    
+
     
     BATCH_SIZE = args.batch_size
 
     if TRAIN:
+        # DEFINE TENSORBOARD SUMMARY THINGS
+        comment = ""
+        writer = SummaryWriter(comment=comment)
+
         model.cuda()
         train_dataload = DataLoaderSegmentation("data/train", BATCH_SIZE, TRAIN_NAME,
                                                 transforms=train_transform)
@@ -106,12 +128,18 @@ if __name__=="__main__":
         epochs = args.epochs
         best_val = 0
         for ep in range(epochs):
-            _, val = train(model, train_dataload, val_dataload, optimizer, ep+1, logger, keep_id=None)
+            tot_loss, val = train(model, train_dataload, val_dataload, criterion, optimizer, ep+1, logger, writer=writer, keep_id=None)
+            
+            # Log metrics for TensorBoard
+            writer.add_scalar("Train/Loss", tot_loss, ep)
+            writer.add_scalar("Validation/Dice score", val, ep)
+            
             if val > best_val :
                 torch.save(model.state_dict(),'models/model_%s.pth'%args.model)
                 best_val = val
                 logger.info("Model saved at epochs {}".format(ep+1))
             scheduler.step()
+        writer.close()
 
 
     if RUN_ON_TEST:
@@ -132,3 +160,4 @@ if __name__=="__main__":
             encoded_strings.append(rle)
         df['rle_mask'] = encoded_strings
         df.to_csv('data/test_submission.csv', index=False)
+
