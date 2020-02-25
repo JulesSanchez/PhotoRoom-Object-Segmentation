@@ -83,8 +83,8 @@ def soft_dice_loss(input: torch.Tensor, labels: torch.Tensor, softmax=True) -> t
     dims = (1, 2, 3)  # sum over C, H, W
     if softmax:
         input = F.softmax(input, dim=1)
-    intersect = torch.sum(input * labels, dim=dims)
-    denominator = torch.sum(input**2 + labels**2, dim=dims)
+    intersect = torch.sum(input * labels.float(), dim=dims)
+    denominator = torch.sum(input**2 + labels.float()**2, dim=dims)
     ratio = intersect / (denominator + EPSILON)
     return torch.mean(1 - 2. * ratio)
 
