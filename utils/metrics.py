@@ -48,10 +48,22 @@ class CrossEntropyLoss2d(nn.Module):
     def __init__(self, weight=None, size_average=True, ignore_index=255):
         super(CrossEntropyLoss2d, self).__init__()
         self.nll_loss = nn.NLLLoss2d(weight, size_average, ignore_index)
-
     def forward(self, inputs, targets):
         return self.nll_loss(F.log_softmax(inputs), targets)
 
+class KLLoss(nn.Module):
+    def __init__(self):
+        super(KLLoss,self).__init__()
+
+    def forward(self,shape, z_mean, z_var):
+        n = shape[0]*shape[1]*shape[2]
+        return torch.mean((1 / n) * torch.sum(torch.exp(z_var) + torch.pow(z_mean,2) - 1. - z_var, axis=-1))
+
+class L2VAELoss(nn.Module):
+    def __init__(self):
+        super(L2VAELoss,self).__init__()
+    def forward(self, inputs, targets):
+        return torch.mean(torch.mean(torch.pow(targets - inputs,2), axis=(1, 2, 3)))
 EPSILON = 1e-8
 
 
@@ -71,8 +83,8 @@ def soft_dice_loss(input: torch.Tensor, labels: torch.Tensor, softmax=True) -> t
     dims = (1, 2, 3)  # sum over C, H, W
     if softmax:
         input = F.softmax(input, dim=1)
-    intersect = torch.sum(input * labels, dim=dims)
-    denominator = torch.sum(input**2 + labels**2, dim=dims)
+    intersect = torch.sum(input * labels.float(), dim=dims)
+    denominator = torch.sum(input**2 + labels.float()**2, dim=dims)
     ratio = intersect / (denominator + EPSILON)
     return torch.mean(1 - 2. * ratio)
 
