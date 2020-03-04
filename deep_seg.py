@@ -45,13 +45,15 @@ TRAIN = True
 VAL = False
 RUN_ON_TEST = False
 
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
 
 def train(model, train_loader, val_loader, criterion, optimizer, epoch, logger, writer: SummaryWriter, keep_id=None):
     model.train()
     tot_loss = 0
     count = 0
     for batch_idx, (data, target) in enumerate(train_loader):
-        data, target = data.cuda(), target.cuda()
+        data, target = data.to(DEVICE), target.to(DEVICE)
         optimizer.zero_grad()
         output = model(data)
         if keep_id is not None:
@@ -71,7 +73,7 @@ def train(model, train_loader, val_loader, criterion, optimizer, epoch, logger, 
     dice_scores = []
     with torch.no_grad():
         for batch_idx, (data, target) in enumerate(val_loader):
-            data, target = data.cuda(), target.cuda()
+            data, target = data.to(DEVICE), target.to(DEVICE)
             output = model(data)
             output = np.argmax(np.transpose(output.cpu().detach().numpy(),(0,2,3,1)),axis=-1)
             target = target.cpu().detach().numpy()
@@ -118,7 +120,7 @@ if __name__=="__main__":
         comment = ""
         writer = SummaryWriter(comment=comment)
 
-        model.cuda()
+        model.to(DEVICE)
         train_dataload = DataLoaderSegmentation("data/train", BATCH_SIZE, TRAIN_NAME,
                                                 transforms=train_transform)
         val_dataload = DataLoaderSegmentation("data/train", BATCH_SIZE, VAL_NAME,
