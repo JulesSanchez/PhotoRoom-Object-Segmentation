@@ -41,12 +41,12 @@ parser.add_argument("--batch_size", '-B', default=2, type=int)
 
 args = parser.parse_args()
 
-TRAIN = False
+TRAIN = True
 VAL = False
 RUN_ON_TEST = False
 
 
-def train(model, train_loader, val_loader, criterion, optimizer, epoch, logger, writer: SummaryWriter=writer, keep_id=None):
+def train(model, train_loader, val_loader, criterion, optimizer, epoch, logger, writer: SummaryWriter, keep_id=None):
     model.train()
     tot_loss = 0
     count = 0
