@@ -17,6 +17,11 @@ Use
 python deep_seg.py -h
 ```
 
+Visualize the training curves and prediction images:
+```bash
+tensorboard --logdir runs/
+```
+
 ## Train-test split
 
 ```bash

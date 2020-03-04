@@ -11,5 +11,6 @@ data/test/*
 
 
 logs/*
+runs/
 # model checkpoints
 models/
