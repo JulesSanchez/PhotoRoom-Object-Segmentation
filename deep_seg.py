@@ -32,7 +32,7 @@ LOSS_DICT = {
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--model", default="unet", choices=list(MODEL_DICT.keys()))
+parser.add_argument("--model", default="attunet", choices=list(MODEL_DICT.keys()))
 parser.add_argument("--model-args", nargs='+', type=int)
 parser.add_argument("--loss", type=str, default="crossentropy", choices=list(LOSS_DICT.keys()))
 parser.add_argument("--lr", '-lr', type=float, default=0.001)
@@ -41,9 +41,9 @@ parser.add_argument("--batch_size", '-B', default=2, type=int)
 
 args = parser.parse_args()
 
-TRAIN = True
+TRAIN = False
 VAL = False
-RUN_ON_TEST = False
+RUN_ON_TEST = True
 
 
 def train(model, train_loader, val_loader, criterion, optimizer, epoch, logger, writer: SummaryWriter, keep_id=None):
@@ -152,6 +152,12 @@ if __name__=="__main__":
         for img in test_gen:
             data = val_transforms(image=img)['image']
             output = resize(np.argmax(np.transpose(model(torch.stack([data])).detach().numpy()[0],(1,2,0)),axis=-1),(720,1280),clip=False,preserve_range=True)
+
+
+
+            plt.imshow(output,cmap='jet')
+            plt.show()
+
             output[output<0.5] = 0
             output[output>=0.5] = 1
             rle = rle_to_string(rle_encode(output))
