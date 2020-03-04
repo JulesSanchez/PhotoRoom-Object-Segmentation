@@ -32,7 +32,7 @@ LOSS_DICT = {
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--model", default="unet", choices=list(MODEL_DICT.keys()))
+parser.add_argument("--model", default="attunet", choices=list(MODEL_DICT.keys()))
 parser.add_argument("--model-args", nargs='+', type=int)
 parser.add_argument("--loss", type=str, default="crossentropy", choices=list(LOSS_DICT.keys()))
 parser.add_argument("--lr", '-lr', type=float, default=0.001)
@@ -146,6 +146,8 @@ if __name__=="__main__":
 
     if RUN_ON_TEST:
         from utils.loader import test_generator, rle_encode, rle_to_string, rle_decode
+        import matplotlib.colors as colors
+        norm = colors.PowerNorm(0.5, vmin=0., vmax=1., clip=True)
         df = pd.read_csv('data/sample_submission.csv')
         model.load_state_dict(torch.load('models/model_%s.pth'%args.model))
         model.eval()

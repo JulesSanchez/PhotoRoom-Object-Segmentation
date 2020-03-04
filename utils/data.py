@@ -21,8 +21,8 @@ PATH = 'data/train'
 
 train_transform = Compose([
     OneOf([
-        RandomResizedCrop(224, 224, scale=(0.75, 1.0), p=0.2),
-        Resize(224, 224, p=0.8),
+        RandomResizedCrop(512, 512, scale=(0.75, 1.0), p=0.2),
+        Resize(512, 512, p=0.8),
     ], p=1.0),
     OneOf([
         GaussNoise(p=0.5),
@@ -40,7 +40,7 @@ train_transform = Compose([
 ])
 
 val_transforms = Compose([
-    Resize(224, 224),
+    Resize(512, 512),
     Normalize(),
     ToTensor()
 ])
