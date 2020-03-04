@@ -41,9 +41,9 @@ parser.add_argument("--batch_size", '-B', default=2, type=int)
 
 args = parser.parse_args()
 
-TRAIN = False
+TRAIN = True
 VAL = False
-RUN_ON_TEST = True
+RUN_ON_TEST = False
 
 
 def train(model, train_loader, val_loader, criterion, optimizer, epoch, logger, writer: SummaryWriter, keep_id=None):
@@ -144,6 +144,8 @@ if __name__=="__main__":
 
     if RUN_ON_TEST:
         from utils.loader import test_generator, rle_encode, rle_to_string, rle_decode
+        import matplotlib.colors as colors
+        norm = colors.PowerNorm(0.5, vmin=0., vmax=1., clip=True)
         df = pd.read_csv('data/sample_submission.csv')
         model.load_state_dict(torch.load('models/model_%s.pth'%args.model))
         model.eval()
@@ -152,12 +154,6 @@ if __name__=="__main__":
         for img in test_gen:
             data = val_transforms(image=img)['image']
             output = resize(np.argmax(np.transpose(model(torch.stack([data])).detach().numpy()[0],(1,2,0)),axis=-1),(720,1280),clip=False,preserve_range=True)
-
-
-
-            plt.imshow(output,cmap='jet')
-            plt.show()
-
             output[output<0.5] = 0
             output[output>=0.5] = 1
             rle = rle_to_string(rle_encode(output))
