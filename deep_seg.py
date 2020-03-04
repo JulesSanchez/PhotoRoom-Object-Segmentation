@@ -41,7 +41,7 @@ parser.add_argument("--batch_size", '-B', default=2, type=int)
 
 args = parser.parse_args()
 
-TRAIN = False
+TRAIN = True
 VAL = False
 RUN_ON_TEST = False
 
