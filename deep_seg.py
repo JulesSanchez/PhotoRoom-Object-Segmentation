@@ -25,7 +25,7 @@ MODEL_DICT = {
 }
 
 LOSS_DICT = {
-    "crossentropy": CrossEntropyLoss2d(size_average=False),
+    "crossentropy": CrossEntropyLoss2d(reduction='sum'),
     "dice": metrics.soft_dice_loss,
     "combined": metrics.CombinedLoss()
 }
@@ -71,36 +71,40 @@ def train(model, train_loader, val_loader, criterion, optimizer, epoch, logger, 
                 100. * batch_idx / len(train_loader), loss.item()))
     tot_loss /= count
     dice_scores = []
+    
+    
     with torch.no_grad():
         for batch_idx, (data, target) in enumerate(val_loader):
             data, target = data.to(DEVICE), target.to(DEVICE)
             output = model(data)
-            output = np.argmax(np.transpose(output.cpu().detach().numpy(),(0,2,3,1)),axis=-1)
-            target = target.cpu().detach().numpy()
+            output_max = np.argmax(np.transpose(output.cpu().detach().numpy(),(0,2,3,1)),axis=-1)
+            target_arr = target.cpu().detach().numpy()
             for k in range(len(output)):
-                dice_scores.append(dice_score(output[k],target[k]))
+                dice_scores.append(dice_score(output_max[k],target_arr[k]))
     logger.info('Val dice score : {}'.format(np.mean(dice_scores)))
+    
+    fig = plot_prediction(data, output, target)
+    writer.add_figure("Validation/Prediction", fig, global_step=epoch)
     
     if epoch == 1:
         writer.add_graph(model, data)
     
-    fig = plot_prediction(data, output, target)
-    writer.add_figure("Train/Prediction", fig, global_step=epoch)
     return tot_loss, np.mean(dice_scores)
 
 
 
 if __name__=="__main__":
 
+    import os
     print(args)
     os.makedirs("logs", exist_ok=True)
+    os.makedirs("models", exist_ok=True)
 
     logger = logging.getLogger("train")
     logger.setLevel(logging.DEBUG)
     logger.handlers = []
     ch = logging.StreamHandler()
     logger.addHandler(ch)
-    import os
     fh = logging.FileHandler(os.path.join("logs", "log.txt"))
     logger.addHandler(fh)
     
@@ -146,8 +150,6 @@ if __name__=="__main__":
 
     if RUN_ON_TEST:
         from utils.loader import test_generator, rle_encode, rle_to_string, rle_decode
-        import matplotlib.colors as colors
-        norm = colors.PowerNorm(0.5, vmin=0., vmax=1., clip=True)
         df = pd.read_csv('data/sample_submission.csv')
         model.load_state_dict(torch.load('models/model_%s.pth'%args.model))
         model.eval()
