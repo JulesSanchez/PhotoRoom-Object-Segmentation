@@ -92,7 +92,9 @@ def plot_prediction(img: torch.Tensor, pred_mask: torch.Tensor, target: torch.Te
     target = target.data.cpu().numpy()
 
     import matplotlib.pyplot as plt
+    import matplotlib.colors as colors
     from typing import List
+    norm = colors.PowerNorm(0.5, vmin=0., vmax=1., clip=True)
     if target is not None:
         num_plots = 3
     else:
@@ -102,7 +104,7 @@ def plot_prediction(img: torch.Tensor, pred_mask: torch.Tensor, target: torch.Te
     axes[0].imshow(img)
     axes[0].set_title("Original image")
     
-    axes[1].imshow(pred_mask)
+    axes[1].imshow(pred_mask, norm=norm)
     axes[1].set_title("Predicted probabilities")
     
     if target is not None:
