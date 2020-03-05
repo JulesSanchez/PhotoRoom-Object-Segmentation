@@ -99,6 +99,7 @@ def plot_prediction(img: torch.Tensor, pred_mask: torch.Tensor, target: torch.Te
     import matplotlib.colors as colors
     from typing import List
     
+    batch_size = img.shape[0]
     img = make_grid(img, 4)  # make grid, reverse (B,G,R) to (R,G,B)
     if apply_softmax:
         pred_mask = F.softmax(pred_mask, dim=1)  # actually apply Softmax
@@ -119,7 +120,7 @@ def plot_prediction(img: torch.Tensor, pred_mask: torch.Tensor, target: torch.Te
         num_plots = 3
     else:
         num_plots = 2
-    fig, axes = plt.subplots(1, num_plots, figsize=(4 * num_plots + 1, 5), dpi=60)
+    fig, axes = plt.subplots(num_plots, 1, figsize=(4 * batch_size + 1, 4 * num_plots + 1), dpi=70)
     fig: plt.Figure
     axes: List[plt.Axes]
     axes[0].imshow(img)
