@@ -28,6 +28,7 @@ To visualize the attention maps of the Attention U-Net model, see script [attent
 ```bash
 python attention_map_visu.py --img path/to/image
 ```
+![attention maps from 1st training image](attention_maps_0000_0000_train.png)
 
 ## Train-test split
 
