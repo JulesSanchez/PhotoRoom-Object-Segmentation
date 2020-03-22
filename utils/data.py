@@ -20,10 +20,12 @@ TRAIN_NAME = 'train_ids_duc.csv'
 VAL_NAME = 'val_ids_duc.csv'
 PATH = 'data/train'
 
+IMG_SIZE = 224
+
 train_transform = Compose([
     OneOf([
-        RandomResizedCrop(512, 512, scale=(0.75, 1.0), p=0.2),
-        Resize(512, 512, p=0.8),
+        RandomResizedCrop(IMG_SIZE, IMG_SIZE, scale=(0.75, 1.0), p=0.2),
+        Resize(IMG_SIZE, IMG_SIZE, p=0.8),
     ], p=1.0),
     OneOf([
         GaussNoise(p=0.5),
@@ -41,7 +43,7 @@ train_transform = Compose([
 ])
 
 val_transforms = Compose([
-    Resize(512, 512),
+    Resize(IMG_SIZE, IMG_SIZE),
     Normalize(),
     ToTensor()
 ])
@@ -104,22 +106,24 @@ def plot_prediction(img: torch.Tensor, pred_mask: torch.Tensor, target: torch.Te
     if apply_softmax:
         pred_mask = F.softmax(pred_mask, dim=1)  # actually apply Softmax
     pred_mask = make_grid(pred_mask, 4)
-    if target.ndim == 3:
-        target = target.unsqueeze(1)  # put in format (B, C, H, W) i.e. add the channel dimension
-    target = make_grid(target, 4)
     
     img = np.transpose(img.detach().cpu().numpy(), axes=(1,2,0))
     img = img * np.array([0.229, 0.224, 0.225]) + np.array([0.485, 0.456, 0.406])
 
     pred_mask = pred_mask.detach().cpu().numpy()[1]  # positive mask values!
-    target = target.detach().cpu().numpy()[0]  # collapse useless dimension
 
     norm = colors.PowerNorm(0.8, vmin=0., vmax=1., clip=True)
     
     if target is not None:
         num_plots = 3
+        if target.ndim == 3:
+            # put in format (B, C, H, W) i.e. add the channel dimension
+            target = target.unsqueeze(1)
+        target = make_grid(target, 4)
+        target = target.detach().cpu().numpy()[0]  # collapse useless dimension
     else:
         num_plots = 2
+
     fig, axes = plt.subplots(num_plots, 1, figsize=(4 * batch_size + 1, 4 * num_plots + 1), dpi=70)
     fig: plt.Figure
     axes: List[plt.Axes]
