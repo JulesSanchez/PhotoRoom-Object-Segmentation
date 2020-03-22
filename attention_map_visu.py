@@ -25,7 +25,8 @@ VISU_DICT = {}
 
 
 def attention_vis_hook(module, input: torch.Tensor, output: torch.Tensor):
-    output = F.interpolate(output, size=(224, 224), mode='bilinear')  # upscale these maps to the original image!
+    # upscale these maps to the original image!
+    output = F.interpolate(output, size=(224, 224), mode='bilinear')
     VISU_DICT[module] = output.data.cpu().numpy()
 
 
@@ -48,6 +49,7 @@ plt.subplot(131)
 plt.imshow(img)
 
 print("Input resolution:", input_res_)
+orig_img = img
 augmented_ = val_transforms(image=img)
 img = augmented_['image'].to(DEVICE)
 img = img.unsqueeze(0)
@@ -68,13 +70,27 @@ plt.colorbar(cax=cax)
 plt.tight_layout()
 
 
-fig: plt.Figure = plt.figure(figsize=(9, 8))
+fig: plt.Figure = plt.figure(figsize=(8, 12))
 
-ax_id = 1
-for module, arr in VISU_DICT.items():
-    ax: plt.Axes = fig.add_subplot(2, 2, ax_id)
+ax_id = 3
+
+ax = fig.add_subplot(3, 2, 1)
+ax.imshow(orig_img)
+ax.set_title("Initial image")
+ax.axis('off')
+
+ax = fig.add_subplot(3, 2, 2)
+ims_= ax.imshow(probas[0, 1].numpy(), cmap='viridis')
+divider = make_axes_locatable(ax)
+cax = divider.append_axes('right', size='5%', pad=0.05)
+plt.colorbar(ims_, cax=cax)
+ax.set_title("Predicted probability map")
+ax.axis('off')
+
+for idx, (module, arr) in enumerate(VISU_DICT.items()):
+    ax: plt.Axes = fig.add_subplot(3, 2, ax_id)
     ax.imshow(arr[0, 0])
-    ax.set_title("Attention map %d" % (ax_id))
+    ax.set_title("Attention map %d" % (idx+1))
     ax_id += 1
     ax.axis('off')
 fig.tight_layout()
