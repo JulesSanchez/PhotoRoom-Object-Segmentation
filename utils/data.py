@@ -21,8 +21,8 @@ PATH = 'data/train'
 
 train_transform = Compose([
     OneOf([
-        RandomResizedCrop(512, 512, scale=(0.75, 1.0), p=0.2),
-        Resize(512, 512, p=0.8),
+        RandomResizedCrop(224, 224, scale=(0.75, 1.0), p=0.2),
+        Resize(224, 224, p=0.8),
     ], p=1.0),
     OneOf([
         GaussNoise(p=0.5),
@@ -40,7 +40,7 @@ train_transform = Compose([
 ])
 
 val_transforms = Compose([
-    Resize(512, 512),
+    Resize(224, 224),
     Normalize(),
     ToTensor()
 ])
@@ -89,7 +89,8 @@ def plot_prediction(img: torch.Tensor, pred_mask: torch.Tensor, target: torch.Te
     img = img * np.array([0.229, 0.224, 0.225]) + np.array([0.485, 0.456, 0.406])
 
     pred_mask = pred_mask.data.cpu().numpy()
-    target = target.data.cpu().numpy()
+    if target is not None:
+        target = target.data.cpu().numpy()
 
     import matplotlib.pyplot as plt
     import matplotlib.colors as colors

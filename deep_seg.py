@@ -41,9 +41,9 @@ parser.add_argument("--batch_size", '-B', default=2, type=int)
 
 args = parser.parse_args()
 
-TRAIN = True
+TRAIN = False
 VAL = False
-RUN_ON_TEST = False
+RUN_ON_TEST = True
 
 
 def train(model, train_loader, val_loader, criterion, optimizer, epoch, logger, writer: SummaryWriter, keep_id=None):
