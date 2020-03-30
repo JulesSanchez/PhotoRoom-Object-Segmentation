@@ -22,6 +22,14 @@ Visualize the training curves and prediction images:
 tensorboard --logdir runs/
 ```
 
+## Visualize attention maps
+
+To visualize the attention maps of the Attention U-Net model, see script [attention_map_visu.py](attention_map_visu.py)
+```bash
+python attention_map_visu.py --img path/to/image
+```
+![attention maps from 1st training image](attention_maps_0000_0000_train.png)
+
 ## Train-test split
 
 ```bash

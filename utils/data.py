@@ -4,6 +4,7 @@ import pandas as pd
 import cv2
 import torch
 import numpy as np
+from torch.nn import functional as F
 from torch.utils import data
 from albumentations import Compose, Resize, RandomResizedCrop, HorizontalFlip, Rotate
 from albumentations import OneOf, GaussNoise, GaussianBlur, RGBShift
@@ -19,10 +20,12 @@ TRAIN_NAME = 'train_ids_duc.csv'
 VAL_NAME = 'val_ids_duc.csv'
 PATH = 'data/train'
 
+IMG_SIZE = 224
+
 train_transform = Compose([
     OneOf([
-        RandomResizedCrop(224, 224, scale=(0.75, 1.0), p=0.2),
-        Resize(224, 224, p=0.8),
+        RandomResizedCrop(IMG_SIZE, IMG_SIZE, scale=(0.75, 1.0), p=0.2),
+        Resize(IMG_SIZE, IMG_SIZE, p=0.8),
     ], p=1.0),
     OneOf([
         GaussNoise(p=0.5),
@@ -40,7 +43,7 @@ train_transform = Compose([
 ])
 
 val_transforms = Compose([
-    Resize(224, 224),
+    Resize(IMG_SIZE, IMG_SIZE),
     Normalize(),
     ToTensor()
 ])
@@ -68,6 +71,7 @@ class DataLoaderSegmentation(data.Dataset):
             img_path = self.img_files[idx]
             mask_path = self.mask_files[idx]
             img = cv2.imread(img_path)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             mask = cv2.imread(mask_path, cv2.IMREAD_UNCHANGED)
             if self.transforms is not None:
                 augmented_ = self.transforms(
@@ -84,26 +88,48 @@ class DataLoaderSegmentation(data.Dataset):
         return self.N
 
 
-def plot_prediction(img: torch.Tensor, pred_mask: torch.Tensor, target: torch.Tensor = None):
-    img = np.transpose(img.data.cpu().numpy(), axes=(1,2,0))
-    img = img * np.array([0.229, 0.224, 0.225]) + np.array([0.485, 0.456, 0.406])
-
-    pred_mask = pred_mask.data.cpu().numpy()
-    if target is not None:
-        target = target.data.cpu().numpy()
-
+def plot_prediction(img: torch.Tensor, pred_mask: torch.Tensor, target: torch.Tensor = None, apply_softmax=True):
+    """Make a plot with the image, prediction probability map, and target mask if available.
+    
+    Parameters
+    ----------
+    We expect the inputs to be 4D mini-batch `Tensor`s of shape (B x C x H x W) (except for target which can be B x H x W and is handled in that case).
+    The `img` image tensor is expected to be in cv2 `(B,G,R)` format. `pred_mask` is expected to be pre-Softmax unless `apply_softmax` is True.
+    """
+    from torchvision.utils import make_grid
     import matplotlib.pyplot as plt
     import matplotlib.colors as colors
     from typing import List
-    norm = colors.PowerNorm(0.5, vmin=0., vmax=1., clip=True)
+    
+    batch_size = img.shape[0]
+    img = make_grid(img, 4)  # make grid, reverse (B,G,R) to (R,G,B)
+    if apply_softmax:
+        pred_mask = F.softmax(pred_mask, dim=1)  # actually apply Softmax
+    pred_mask = make_grid(pred_mask, 4)
+    
+    img = np.transpose(img.detach().cpu().numpy(), axes=(1,2,0))
+    img = img * np.array([0.229, 0.224, 0.225]) + np.array([0.485, 0.456, 0.406])
+
+    pred_mask = pred_mask.detach().cpu().numpy()[1]  # positive mask values!
+
+    norm = colors.PowerNorm(0.8, vmin=0., vmax=1., clip=True)
+    
     if target is not None:
         num_plots = 3
+        if target.ndim == 3:
+            # put in format (B, C, H, W) i.e. add the channel dimension
+            target = target.unsqueeze(1)
+        target = make_grid(target, 4)
+        target = target.detach().cpu().numpy()[0]  # collapse useless dimension
     else:
         num_plots = 2
-    fig, axes = plt.subplots(1, num_plots, figsize=(4 * num_plots + 1, 4), dpi=50)
+
+    fig, axes = plt.subplots(num_plots, 1, figsize=(4 * batch_size + 1, 4 * num_plots + 1), dpi=70)
+    fig: plt.Figure
     axes: List[plt.Axes]
     axes[0].imshow(img)
     axes[0].set_title("Original image")
+    axes[0].axis('off')
     
     axes[1].imshow(pred_mask, norm=norm)
     axes[1].set_title("Predicted probabilities")
@@ -111,6 +137,8 @@ def plot_prediction(img: torch.Tensor, pred_mask: torch.Tensor, target: torch.Te
     if target is not None:
         axes[2].imshow(target)
         axes[2].set_title("Target mask")
+        axes[2].axis('off')
+    fig.tight_layout()
     return fig
 
 
